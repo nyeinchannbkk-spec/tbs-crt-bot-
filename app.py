@@ -1,6 +1,6 @@
 import os
 import logging
-import psycopg2
+import psycopg as psycopg2
 from flask import Flask, request, jsonify
 from telegram import Bot
 
