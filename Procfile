@@ -1,3 +1,1 @@
-Flask==3.0.3
-requests==2.31.0
-psycopg2-binary==2.9.9
+web: gunicorn app:app
