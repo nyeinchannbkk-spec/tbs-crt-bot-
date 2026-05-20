@@ -3,3 +3,7 @@ requests
 psycopg[binary]
 gunicorn
 python-telegram-bot
+yfinance
+pandas
+pandas-ta
+schedule
