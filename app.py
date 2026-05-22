@@ -4,7 +4,7 @@ import requests
 import yfinance as yf
 import pandas as pd
 import pandas_ta as ta
-from datetime import datetime, 内time
+from datetime import datetime, time as datetime_time
 import pytz
 from flask import Flask
 
@@ -29,10 +29,10 @@ def is_in_killzone():
     current_time = now_tz.time()
     
     # London Killzone (14:30 - 17:30) & New York Killzone (19:30 - 22:30)
-    london_start = datetime.strptime("14:30", "%H:%M").time()
-    london_end = datetime.strptime("17:30", "%H:%M").time()
-    ny_start = datetime.strptime("19:30", "%H:%M").time()
-    ny_end = datetime.strptime("22:30", "%H:%M").time()
+    london_start = datetime_time(14, 30)
+    london_end = datetime_time(17, 30)
+    ny_start = datetime_time(19, 30)
+    ny_end = datetime_time(22, 30)
     
     return (london_start <= current_time <= london_end) or (ny_start <= current_time <= ny_end)
 
@@ -59,7 +59,7 @@ def check_market_and_trade():
         # Asian Session approximation (06:00 to 12:00 BKK time approx)
         asian_data = gold_h1.between_time('06:00', '12:00')
         asian_high = asian_data['High'].max() if not asian_data.empty else pdh
-        asian_low = asian_data['Low'].iloc[-1].min() if not asian_data.empty else pdl
+        asian_low = asian_data['Low'].min() if not asian_data.empty else pdl
 
         # Current M5 candles
         m5_latest = gold_m5.iloc[-1]
@@ -79,7 +79,7 @@ def check_market_and_trade():
         gold_m5['ATR'] = ta.atr(gold_m5['High'], gold_m5['Low'], gold_m5['Close'], length=14)
         atr_val = gold_m5['ATR'].iloc[-1] if not pd.isna(gold_m5['ATR'].iloc[-1]) else 1.5
         
-        # Fractal/Swing Points check (Simplified for automated stream)
+        # Fractal/Swing Points check
         recent_highs = gold_m5['High'].iloc[-6:-2]
         recent_lows = gold_m5['Low'].iloc[-6:-2]
         
@@ -93,7 +93,6 @@ def check_market_and_trade():
         mss_sell = current_price < prev_swing_low and displaced
 
         # --- RULE 4: FAIR VALUE GAP (FVG) DETECTION LOGIC ---
-        # Reading consecutive 3 candles
         c1 = gold_m5.iloc[-3]
         c2 = gold_m5.iloc[-2]
         c3 = gold_m5.iloc[-1]
@@ -109,13 +108,12 @@ def check_market_and_trade():
         sl_price = 0.0
         tp_price = 0.0
 
-        # Execution conditions matched with CRT Validation
         if bullish_sweep or (mss_buy and bullish_fvg):
             action = "BUY"
             crt_signal = "MSS Breakout & Bullish FVG Range Formed (SMC + CRT Validated)"
             fvg_range = f"${round(c1['High'], 2)} - ${round(c3['Low'], 2)}"
-            sl_price = round(current_price - 4.5, 2)  # Tight Stop below structure
-            tp_price = round(current_price + 9.0, 2)   # 1:2 Reward Ratio
+            sl_price = round(current_price - 4.5, 2)
+            tp_price = round(current_price + 9.0, 2)
             
         elif bearish_sweep or (mss_sell and bearish_fvg):
             action = "SELL"
